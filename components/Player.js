@@ -1,3 +1,86 @@
+import {
+    HeartIcon,
+    VolumeUpIcon as VolumeDownIcon,
+  } from "@heroicons/react/outline";
+  import {
+    FastForwardIcon,
+    PauseIcon,
+    PlayIcon,
+    ReplyIcon,
+    RewindIcon,
+    VolumeUpIcon,
+    SwitchHorizontalIcon,
+  } from "@heroicons/react/solid";
+  import { debounce } from "lodash";
+  import { useSession } from "next-auth/react";
+  import { useCallback, useEffect, useState } from "react";
+  import { useRecoilState, useRecoilValue } from "recoil";
+  import { currentTrackIdState, isPlayingState } from "../atoms/songAtom";
+  import useSongInfo from "../hooks/useSongInfo";
+  import useSpotify from "../hooks/useSpotify";
+  
+  function Player() {
+    const spotifyApi = useSpotify();
+    const { data: session, status } = useSession();
+    const [currentTrackId, setCurrentIdTrack] =
+      useRecoilState(currentTrackIdState);
+    const [isPlaying, setIsPlaying] = useRecoilState(isPlayingState);
+    const [volume, setVolume] = useState(50);
+  
+    const songInfo = useSongInfo();
+  
+    // console.log(songInfo);
+  
+    const fetchCurrentSong = () => {
+      if (!songInfo) {
+        spotifyApi.getMyCurrentPlayingTrack().then((data) => {
+          console.log("Now playing: ", data.body?.item);
+          setCurrentIdTrack(data.body?.item?.id);
+  
+          spotifyApi
+            .getMyCurrentPlaybackState()
+            .then((data) => setIsPlaying(data.body?.is_playing))
+            .catch(() => {});
+        });
+      }
+    };
+  
+    // Fetch the song on first load before any song has been loaded...
+    useEffect(() => {
+      if (spotifyApi.getAccessToken() && !currentTrackId) {
+        fetchCurrentSong();
+        setVolume(50);
+      }
+    }, [currentTrackId, spotifyApi, session]);
+  
+    const handlePlayPause = () => {
+      spotifyApi.getMyCurrentPlaybackState().then((data) => {
+        if (data.body.is_playing) {
+          spotifyApi.pause();
+          setIsPlaying(false);
+        } else {
+          spotifyApi.play();
+          setIsPlaying(true);
+        }
+      });
+    };
+  
+    useEffect(() => {
+      if (volume > 0 && volume < 100) {
+        debouncedAdjustVolume(volume);
+      }
+    }, [volume]);
+  
+    const debouncedAdjustVolume = useCallback(
+      debounce((volume) => {
+        spotifyApi.setVolume(volume);
+      }, 500),
+      []
+    );
+
+
+
+
 function Player() {
     return (
         <div className="h-24 bg-gradient-to-b from-black to-gray-900 border-gray-900 text-white grid grid-cols-3 text-xs md:text-base px-2 md:px-8">
@@ -53,7 +136,10 @@ function Player() {
           </div>
         </div>
       );
-    }
-    
-    export default Player;
+    }    
+}  
+
+export default Player;
+
+
     
