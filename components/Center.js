@@ -7,7 +7,40 @@ import { playlistIdState, playlistState } from "../atoms/playlistAtom";
 import useSpotify from "../hooks/useSpotify";
 import Songs from "./Songs";
 
+const colors = [
+    "from-indigo-500",
+    "from-blue-500",
+    "from-green-500",
+    "from-red-500",
+    "from-yellow-500",
+    "from-pink-500",
+    "from-purple-500",
+  ];
+  
+  function Center() {
+    const { data: session } = useSession();
+    const spotifyApi = useSpotify();
+    const [playlistId, setPlaylistId] = useRecoilState(playlistIdState);
+    const [playlist, setPlaylist] = useRecoilState(playlistState);
+    const [color, setColor] = useState(null);
+  
+    useEffect(() => {
+      setColor(shuffle(colors).pop());
+    }, [playlist]);
+  
+    useEffect(() => {
+      spotifyApi.getPlaylist(playlistId).then(
+        function (data) {
+          console.log("Some information about this playlist", data.body);
+          setPlaylist(data.body);
+        },
+        function (err) {
+          console.log("Something went wrong!", err);
+        }
+      );
+    }, [spotifyApi, playlistId]);
 
+    
 function Center() {
     return (
         <div className="bg-black flex-grow col-span-full relative h-screen overflow-y-scroll scrollbar-hide">
@@ -48,5 +81,5 @@ function Center() {
       );
     }
     
-    export default Center;
+export default Center;
     
